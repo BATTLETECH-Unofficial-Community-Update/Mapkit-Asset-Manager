@@ -1,0 +1,15 @@
+Mapkit Asset Manager
+====================
+
+Mapkit Asset Manager is a fork of AssetRipper, https://github.com/AssetRipper/AssetRipper, at commit
+189ccb660ddaf6e1abdd1422113ea60fde8470b4.
+
+AssetRipper is Copyright (C) ds5678 and the AssetRipper contributors, and is licensed under the GNU General Public License,
+version 3 (LICENSE.md, unchanged from upstream). The upstream history is kept in this repository, and every source file
+that carries an upstream copyright header keeps it.
+
+The changes in this fork are listed in README.md; each is one commit by "UCU map kit". They are offered under the same
+licence, GPL-3.0.
+
+Third-party libraries that AssetRipper depends on keep their own licences; upstream's licensing notes apply to them
+unchanged.

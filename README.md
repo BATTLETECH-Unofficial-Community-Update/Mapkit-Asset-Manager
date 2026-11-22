@@ -1,41 +1,57 @@
-# AssetRipper
+Mapkit Asset Manager is a fork of [AssetRipper](https://github.com/AssetRipper/AssetRipper) (GPL-3.0). It is not
+affiliated with the AssetRipper project.
 
-[![](https://img.shields.io/github/downloads/AssetRipper/AssetRipper/total.svg)](https://github.com/AssetRipper/AssetRipper/releases)
-[![](https://img.shields.io/github/downloads/AssetRipper/AssetRipper/latest/total.svg)](https://github.com/AssetRipper/AssetRipper/releases/latest)
-[![](https://img.shields.io/github/v/release/AssetRipper/AssetRipper)](https://github.com/AssetRipper/AssetRipper/releases/latest)
-[![](https://weblate.samboy.dev/widgets/assetripper/-/gui/svg-badge.svg)](http://weblate.samboy.dev/engage/assetripper/)
+It is the tool the BattleTech UCU (Unofficial Community Update) map kit runs to extract a retail map from the game's
+files into a Unity project. The kit calls it as a separate program and never links it.
 
-AssetRipper is a powerful tool for analyzing Unity game files. For example, it enables game developers to:
+## How it differs from upstream
 
-* Find dependency assets that were accidentally included in their game
-* Convert their assets into the native Unity engine format
-* Identify code that could not be inlined or trimmed from their build
-* Find broken asset references that would cause issues in their game
+The base is upstream commit `189ccb660ddaf6e1abdd1422113ea60fde8470b4` (AssetRipper 1.3.14, "Fix warnings in AssemblyDumper
+project"). Namespaces, assembly names and the command line's `AssetRipper.CLI.dll` are upstream's; only the name you read
+changed. Each change below is one commit.
 
-AssetRipper supports Unity versions from `3.5.0` to `6000.5.X`. However, support quality may vary slightly for different Unity versions.
+1. **Stable GUIDs.** Upstream gives every exported asset a random GUID (`UnityGuid.NewGuid()`), so two exports of different
+   levels disagree on the assets they share. Here the GUID is the MD5 of the asset's identity in the game files:
+   `file/<file name>/<path ID>` for an asset read from a game file, `processed/<collection>/<class ID>/<directory>/<name>`
+   for one AssetRipper generates, `scene/<level file name>` for a scene with no GUID of its own. A generated prefab takes its
+   root GameObject's identity, and a hash collision appends `#n`. The CLI writes `AuxiliaryFiles/guid_map.tsv` (path, GUID,
+   kind, key). Script and assembly GUIDs were already deterministic upstream.
+2. **Class-name fallback for an unresolved script.** When a MonoScript's assembly, namespace and class name do not resolve,
+   the same assembly's types (nested ones included) are scanned and a type that matches on `ClassName_R`, `ClassName`, or
+   `ClassName_R` ignoring case is used; the first match in enumeration order wins. Without it, BattleTech's nested and
+   renamed MonoBehaviour types stay raw blobs and their references come out as placeholders.
+3. **`ScriptContentLevel` defaults to `Level1`.** At `Level2`, ICSharpCode.Decompiler overflows the stack
+   (`AddCheckedBlocks.GetResult` recursion) on self-referencing MonoBehaviours, such as BattleTech's `Assembly-CSharp`.
+   `Level1` still loads the assemblies for type resolution, so sprite GUIDs and component references resolve, but method
+   bodies come out stubbed. Do not read game logic from this tool's script output.
+4. **`ShaderExportMode` defaults to `Yaml`.** Shaders export as Unity YAML ShaderAssets (ShaderLab source plus the compiled
+   programs) instead of the `Dummy` stand-in, so the Unity 6 Editor can recompile them. The export is larger and slower.
+5. **A command-line front end.** Upstream has no CLI project at this commit. `Source/AssetRipper.CLI` takes
+   `<input> <output>`: it loads and processes the game data and exports a Unity project, with every setting at its default
+   (which is why changes 3 and 4 are changes to the defaults).
 
-[Downloads](https://assetripper.github.io/AssetRipper/articles/Downloads.html)
+The kit's copy of the same changes is a patch set against the base commit, in the BattleTech UCU repository under
+`tools/map-kit/assetripper-patches/`.
 
-## Premium Edition
+## Build
 
-There is a premium edition of AssetRipper. This edition includes additional [features and improvements](https://assetripper.github.io/AssetRipper/articles/PremiumFeatures.html).
+Needs git and a .NET SDK that targets `net10.0` (built here with SDK 11.0.100). The first restore needs NuGet access.
+The upstream package versions restore and build as they are; no package pins are needed.
 
-## Tips
+```
+dotnet publish Source/AssetRipper.CLI/AssetRipper.CLI.csproj -c Release -o <publish folder>
+```
 
-Your support helps maintain and improve AssetRipper. If you find this tool useful, please consider tipping:
+## Run
 
-* [GitHub Sponsors](https://github.com/sponsors/ds5678)
-* [PayPal](https://paypal.me/ds5678)
-* [Buy Me a Coffee](https://buymeacoffee.com/assetripper)
-* [Ko-fi](https://ko-fi.com/assetripper)
+```
+dotnet <publish folder>/AssetRipper.CLI.dll <input folder> <output folder>
+```
 
-## Discord [![](https://img.shields.io/discord/867514400701153281?color=blue&label=AssetRipper)](https://discord.gg/XqXa53W2Yh)
+The input folder is the game's data folder (for BattleTech, a staged `BATTLETECH` folder holding the level files and their
+externals). The output folder gets `ExportedProject/` and `AuxiliaryFiles/`, including `guid_map.tsv`. The tool makes no
+network call.
 
-The development of this project has a dedicated [Discord server](https://discord.gg/XqXa53W2Yh).
+## Licence
 
-## Legal Disclaimers
-
-* AssetRipper is licensed under the [GNU General Public License v3.0](LICENSE.md).
-* AssetRipper is not sponsored by or affiliated with Unity Technologies or its affiliates.
-* "Unity" is a registered trademark of Unity Technologies or its affiliates in the U.S. and elsewhere.
-* The [Credits](https://assetripper.github.io/AssetRipper/articles/Credits.html) page contains a list of attributions.
+GPL-3.0, upstream's `LICENSE.md` unchanged. See `NOTICE` for the copyright holders.
