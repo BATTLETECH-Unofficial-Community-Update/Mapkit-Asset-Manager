@@ -37,7 +37,7 @@ public sealed record class ExportSettings
 	/// <summary>
 	/// How to export shaders?
 	/// </summary>
-	public ShaderExportMode ShaderExportMode { get; set; } = ShaderExportMode.Dummy;
+	public ShaderExportMode ShaderExportMode { get; set; } = ShaderExportMode.Yaml;
 
 	/// <summary>
 	/// Should sprites be exported as a texture? Recommended: Native
