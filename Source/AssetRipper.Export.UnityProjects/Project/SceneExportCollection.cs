@@ -61,6 +61,7 @@ public class SceneExportCollection : ExportCollection, IComparer<IUnityObjectBas
 		}
 		Meta meta = new Meta(GUID, sceneImporter);
 		ExportMeta(container, meta, filePath, fileSystem);
+		DeterministicGuids.Exported(Scene.Path + "." + ExportExtension, GUID); // UCU map kit patch: guid_map.tsv row
 		return true;
 	}
 

@@ -25,6 +25,7 @@ public class AssetExportCollection<T> : ExportCollection where T : IUnityObjectB
 		{
 			Meta meta = new Meta(GUID, CreateImporter(container));
 			ExportMeta(container, meta, filePath, fileSystem);
+			DeterministicGuids.Exported(fileSystem.Path.GetRelativePath(projectDirectory, filePath), GUID);
 			return true;
 		}
 		return false;
@@ -75,7 +76,11 @@ public class AssetExportCollection<T> : ExportCollection where T : IUnityObjectB
 		return importer;
 	}
 
-	public override UnityGuid GUID { get; } = UnityGuid.NewGuid();
+	// UCU map kit patch: was UnityGuid.NewGuid(). Lazy, because a derived constructor sets IdentityAsset after this one runs.
+	public override UnityGuid GUID => guid ??= DeterministicGuids.ForAsset(IdentityAsset);
+	private UnityGuid? guid;
+	/// <summary>The asset whose identity in the game files names this collection's GUID.</summary>
+	protected virtual IUnityObjectBase IdentityAsset => Asset;
 	public override IAssetExporter AssetExporter { get; }
 	public override AssetCollection File => Asset.Collection;
 	public override IEnumerable<IUnityObjectBase> Assets

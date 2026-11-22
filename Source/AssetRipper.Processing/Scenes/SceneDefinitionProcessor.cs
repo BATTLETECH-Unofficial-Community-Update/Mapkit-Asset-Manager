@@ -112,7 +112,8 @@ public sealed class SceneDefinitionProcessor : IAssetProcessor
 		foreach (AssetCollection sceneCollection in sceneCollections)
 		{
 			SceneDefinition sceneDefinition;
-			UnityGuid guid = sceneGuids.TryGetValue(sceneCollection, out UnityGuid sceneGuid) ? sceneGuid : default;
+			// UCU map kit patch: a scene with no GUID of its own gets one from its level file name, not a random one.
+			UnityGuid guid = sceneGuids.TryGetValue(sceneCollection, out UnityGuid sceneGuid) && !sceneGuid.IsZero ? sceneGuid : DeterministicGuids.ForScene(sceneCollection.Name);
 			if (scenePaths.TryGetValue(sceneCollection, out string? path))
 			{
 				sceneDefinition = SceneDefinition.FromPath(path, guid);

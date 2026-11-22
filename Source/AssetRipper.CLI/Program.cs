@@ -1,3 +1,4 @@
+using AssetRipper.Assets;
 using AssetRipper.Export.Configuration;
 using AssetRipper.Export.UnityProjects;
 using AssetRipper.IO.Files;
@@ -32,6 +33,10 @@ if (gameData.GameBundle.HasAnyAssetCollections())
 {
 	Directory.CreateDirectory(outputPath);
 	handler.Export(gameData, outputPath, LocalFileSystem.Instance);
+	// Mapkit Asset Manager: one row per exported file (path, GUID, kind, key), the join from an exported file to its GUID source.
+	string guidMap = Path.Join(outputPath, "AuxiliaryFiles", "guid_map.tsv");
+	Directory.CreateDirectory(Path.GetDirectoryName(guidMap)!);
+	File.WriteAllLines(guidMap, DeterministicGuids.Rows().Prepend("path\tguid\tkind\tkey"));
 	Console.WriteLine("Export complete.");
 	return 0;
 }

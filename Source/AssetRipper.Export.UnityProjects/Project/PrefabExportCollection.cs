@@ -23,6 +23,10 @@ public class PrefabExportCollection : AssetsExportCollection<IPrefabInstance>
 
 	protected override string GetExportExtension(IUnityObjectBase asset) => PrefabKeyword;
 
+	// UCU map kit patch: the PrefabInstance is generated, so its path ID depends on what else was loaded; the root GameObject is
+	// read from a game file.
+	protected override IUnityObjectBase IdentityAsset => RootGameObject;
+
 	public override TransferInstructionFlags Flags => base.Flags | TransferInstructionFlags.SerializeForPrefabSystem;
 	public IGameObject RootGameObject { get; }
 	public IPrefabInstance Prefab { get; }
