@@ -49,6 +49,46 @@ public static class MonoScriptExtensions
 		// Also, Unity doesn't change serialization very often at all.
 
 		ScriptIdentifier scriptID = assemblyManager.GetScriptID(monoScript.GetAssemblyNameFixed(), monoScript.Namespace, monoScript.ClassName_R);
+
+		// Fallback: when the exact assembly+namespace+name lookup fails, look the class up by name in the same assembly,
+		// nested types included. A type matches on ClassName_R, ClassName, or ClassName_R ignoring case; the first match in
+		// enumeration order wins. Handles MonoScript names that do not resolve through namespace+name (nested, renamed types).
+		if (assemblyManager.IsSet && !assemblyManager.IsValid(scriptID))
+		{
+			TypeDefinition? foundType = null;
+			string asmName = monoScript.GetAssemblyNameFixed();
+			foreach (AssemblyDefinition asm in assemblyManager.GetAssemblies())
+			{
+				string asmNameStr = asm.Name?.ToString() ?? "";
+				if (!string.Equals(asmNameStr, asmName, StringComparison.OrdinalIgnoreCase))
+				{
+					continue;
+				}
+				foreach (ModuleDefinition module in asm.Modules)
+				{
+					foreach (TypeDefinition type in module.GetAllTypes())
+					{
+						// one test per type: any of the three name matches ends the search
+						string typeName = type.Name?.ToString() ?? "";
+						if (typeName == monoScript.ClassName_R?.ToString() ||
+							typeName == monoScript.ClassName?.ToString() ||
+							string.Equals(typeName, monoScript.ClassName_R?.ToString(), StringComparison.OrdinalIgnoreCase))
+						{
+							foundType = type;
+							break;
+						}
+					}
+					if (foundType != null) break;
+				}
+				if (foundType != null) break;
+			}
+
+			if (foundType != null)
+			{
+				scriptID = new ScriptIdentifier(asmName, foundType.Namespace?.ToString() ?? "", foundType.Name?.ToString() ?? "");
+			}
+		}
+
 		if (!assemblyManager.IsSet)
 		{
 			failureReason = null;
